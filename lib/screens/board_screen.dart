@@ -19,8 +19,23 @@ class BoardScreen extends StatefulWidget {
 
 class _BoardScreenState extends State<BoardScreen> {
   final ApiService apiService = ApiService();
+  
+  // 🔥 Guardamos el Future en una variable para poder refrescarlo de verdad
+  late Future<List<Announcement>> _announcementsFuture;
 
-  // Función para dar color según la categoría
+  @override
+  void initState() {
+    super.initState();
+    _refreshAnnouncements();
+  }
+
+  // 🔥 Función centralizada para cargar/actualizar los datos
+  void _refreshAnnouncements() {
+    setState(() {
+      _announcementsFuture = apiService.getAnnouncements(widget.flightNumber, widget.userId);
+    });
+  }
+
   Color _getCategoryColor(String category) {
     switch (category.toUpperCase()) {
       case 'TO_AIRPORT':
@@ -34,6 +49,47 @@ class _BoardScreenState extends State<BoardScreen> {
     }
   }
 
+  void _confirmDelete(BuildContext context, int announcementId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("¿Eliminar anuncio?"),
+        content: const Text("Esta acción no se puede deshacer y el anuncio desaparecerá del tablón."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("CANCELAR"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                // 🔥 Usamos tu ApiService centralizado en lugar de instanciar otro Dio local
+                // Asegúrate de tener implementado el método deleteAnnouncement en tu ApiService
+                await apiService.deleteAnnouncement(announcementId, widget.userId);
+                
+                if (mounted) {
+                  navigator.pop(); // Cierra el diálogo
+                  _refreshAnnouncements(); // 🔥 Ahora sí refresca correctamente el FutureBuilder
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text("Anuncio eliminado correctamente")),
+                  );
+                }
+              } catch (e) {
+                if (mounted) navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text("Error al eliminar: $e")),
+                );
+              }
+            },
+            child: const Text("ELIMINAR", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,18 +97,22 @@ class _BoardScreenState extends State<BoardScreen> {
       appBar: AppBar(
         title: Text(
           "Vuelo ${widget.flightNumber}",
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontFamily: 'Poppins', fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.indigo,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _refreshAnnouncements,
+          )
+        ],
       ),
-      // BOTÓN PARA CREAR ANUNCIO
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.indigo,
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
-          // Navegamos y esperamos a que vuelva
-          await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CreateAnnouncementScreen(
@@ -61,15 +121,15 @@ class _BoardScreenState extends State<BoardScreen> {
               ),
             ),
           );
-          // Al volver, refrescamos la pantalla
-          setState(() {});
+          // Si al volver del formulario nos devuelve un éxito, refrescamos
+          _refreshAnnouncements();
         },
       ),
       body: FutureBuilder<List<Announcement>>(
-        future: apiService.getAnnouncements(widget.flightNumber, widget.userId),
+        future: _announcementsFuture, // 🔥 Apunta a la variable del estado
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.indigo));
           }
 
           if (snapshot.hasError) {
@@ -103,8 +163,8 @@ class _BoardScreenState extends State<BoardScreen> {
                       leading: CircleAvatar(
                         backgroundColor: cardColor,
                         child: Text(
-                          ann.authorName[0],
-                          style: const TextStyle(color: Colors.white),
+                          ann.authorName.isNotEmpty ? ann.authorName[0].toUpperCase() : 'U',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
                       title: Text(
@@ -112,16 +172,53 @@ class _BoardScreenState extends State<BoardScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text("Publicado por ${ann.authorName}"),
-                      trailing: Chip(
-                        label: Text(ann.category),
-                        backgroundColor: cardColor.withValues(alpha: 0.2),
-                      ),
+                      // 🔥 Corregido: Comparamos contra ann.authorId
+                      trailing: widget.userId == ann.authorId
+                          ? PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert),
+                              onSelected: (value) async {
+                                if (value == 'edit') {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CreateAnnouncementScreen(
+                                        flightNumber: widget.flightNumber,
+                                        userId: widget.userId,
+                                        announcement: ann, 
+                                      ),
+                                    ),
+                                  );
+                                  _refreshAnnouncements();
+                                } else if (value == 'delete') {
+                                  _confirmDelete(context, ann.id);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: ListTile(
+                                    leading: Icon(Icons.edit, size: 20),
+                                    title: Text("Editar"),
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: ListTile(
+                                    leading: Icon(Icons.delete, color: Colors.red, size: 20),
+                                    title: Text("Eliminar", style: TextStyle(color: Colors.red)),
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Chip(
+                              label: Text(ann.category),
+                              backgroundColor: cardColor.withAlpha(50),
+                            ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(

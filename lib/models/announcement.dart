@@ -1,34 +1,40 @@
 class Announcement {
-  final int? id;
-  final String flightNumber;
+  final int id;
   final String title;
   final String description;
-  final String category;
   final int seatsAvailable;
-  final String authorName;
+  final String category;
+  final String? type;
   final int authorId;
+  final String authorName;
+  final String? authorPhoto;
+  final String flightNumber;
 
   Announcement({
-    this.id,
-    required this.flightNumber,
+    required this.id,
     required this.title,
     required this.description,
-    required this.category,
     required this.seatsAvailable,
-    required this.authorName,
+    required this.category,
+    this.type,
     required this.authorId,
+    required this.authorName,
+    required this.authorPhoto,
+    required this.flightNumber,
   });
 
   factory Announcement.fromJson(Map<String, dynamic> json) {
     return Announcement(
-      id: json['id'],
-      flightNumber: json['flightNumber'] ?? '',
-      title: json['title'] ?? '',
+      id: json['id'] ?? 0,
+      title: json['title'] ?? 'Sin título',
       description: json['description'] ?? '',
-      category: json['category'] ?? 'TO_AIRPORT',
       seatsAvailable: json['seatsAvailable'] ?? 0,
-      authorName: json['authorName'] ?? 'Anónimo',
-      authorId: json['authorId'] ?? 0,
+      category: json['category'] ?? 'General',
+      type: json['type'] ?? 'TRANSPORT',
+      authorId: json['authorId'] ?? json['author']?['id'] ?? 0, 
+      authorName: json['authorName'] ?? 'Usuario', 
+      authorPhoto: json['authorProfilePictureUrl'] ?? json['authorPhoto'] ?? '', 
+      flightNumber: json['flightNumber'] ?? '---',
     );
   }
 }

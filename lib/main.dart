@@ -1,51 +1,25 @@
 import 'package:flutter/material.dart';
-import 'services/api_service.dart';
-import 'screens/join_flight_screen.dart';
-void main() => runApp(const MaterialApp(home: JoinFlightScreen()));
+import 'theme/wefly_theme.dart';
+import 'screens/main_navigation_screen.dart';
 
-class TestScreen extends StatefulWidget {
-  const TestScreen({super.key});
-
-  @override
-  State<TestScreen> createState() => _TestScreenState();
+void main() {
+  runApp(const MyApp());
 }
 
-class _TestScreenState extends State<TestScreen> {
-  String status = "Presiona para buscar anuncios (Vuelo IB3110)";
-  final ApiService _apiService = ApiService(); // Usamos tu clase ApiService
-
-  void fetchAnnouncements() async {
-    try {
-      // Usamos el método de tu ApiService con el usuario 1 (Fran verificado)
-      final results = await _apiService.getAnnouncements('IB3110', 1);
-      
-      setState(() {
-        status = "✅ Éxito: ${results.length} anuncios encontrados";
-      });
-    } catch (e) {
-      setState(() {
-        status = "❌ Error: $e";
-      });
-    }
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("WeFly Connect Test")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(status, textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: fetchAnnouncements, 
-              child: const Text("Probar Conexión")
-            ),
-          ],
-        ),
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'WeFly',
+      theme: WeFlyTheme.lightTheme, // Usamos nuestro nuevo tema
+      home: const MainNavigationScreen(), // Iniciamos con el menú
+      // Añadimos las rutas si vas a usar Navigator.pushNamed
+      routes: {
+        '/login': (context) => const Scaffold(body: Center(child: Text("Pantalla de Login"))),
+      },
     );
   }
 }
