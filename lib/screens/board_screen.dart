@@ -112,7 +112,7 @@ class _BoardScreenState extends State<BoardScreen> {
         backgroundColor: Colors.indigo,
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
-          final result = await Navigator.push(
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => CreateAnnouncementScreen(

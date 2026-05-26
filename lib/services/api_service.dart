@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:universal_html/html.dart' as html; // Web seguro y multi-plataforma
 import 'package:dio/dio.dart';
 import '../models/announcement.dart';
 import '../models/user_model.dart';
@@ -11,6 +12,28 @@ class ApiService {
       connectTimeout: const Duration(seconds: 5),
     ),
   );
+
+  ApiService() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = html.window.localStorage['auth_token'];
+
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+
+          return handler.next(options); // Convertido en return para evitar bloqueos
+        },
+        onError: (DioException e, handler) {
+          if (e.response?.statusCode == 401) {
+            log('⚠️ Error 401: Token no válido o expirado.');
+          }
+          return handler.next(e);
+        },
+      ),
+    );
+  }
 
   Future<List<Flight>> getFlights() async {
     try {
@@ -31,7 +54,6 @@ class ApiService {
           .map((e) => Announcement.fromJson(e))
           .toList();
     } on DioException catch (e) {
-      // Aquí capturarás el "Acceso denegado" del Backend
       throw e.response?.data['message'] ?? "Error de conexión";
     }
   }
@@ -91,8 +113,6 @@ class ApiService {
           'reservationCode': reservationCode,
         },
       );
-
-      // Si tu backend devuelve un String plano con estado 200, la petición es exitosa
       return response.statusCode == 200;
     } catch (e, st) {
       log("Error al unirse al vuelo", error: e, stackTrace: st);
@@ -110,4 +130,15 @@ class ApiService {
       throw Exception("No se pudo eliminar el anuncio: $e");
     }
   }
-}
+
+  Future<List<UserProfile>> getUsersByFlight(String flightNumber) async {
+    try {
+      final response = await _dio.get('/flights/$flightNumber/users');
+      return (response.data as List)
+          .map((e) => UserProfile.fromJson(e))
+          .toList();
+    } catch (e) {
+      throw Exception("Error al cargar usuarios del vuelo");
+    }
+  }
+} // <- Solo una llave final cerrando la clase ApiService

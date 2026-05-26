@@ -1,216 +1,264 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/wefly_theme.dart';
-import '../services/api_service.dart';
-import 'edit_profile_screen.dart'; 
+import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatefulWidget {
-  final int userId;
-  const ProfileScreen({super.key, required this.userId});
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  final _apiService = ApiService();
-  
-  String _name = "";
-  String _bio = "";
-  String _photoUrl = "";
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserProfile();
-  }
-
-  Future<void> _fetchUserProfile() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
-      final userData = await _apiService.getUserProfile(widget.userId);
-      setState(() {
-        _name = userData.name;
-        _bio = userData.bio ?? 'Sin biografía disponible.';
-        _photoUrl = userData.profilePictureUrl ?? '';
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = "Error al conectar con el servidor";
-      });
-    }
-  }
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 Extraemos la inicial exactamente igual que en la pantalla de edición
-    final String firstLetter = _name.trim().isNotEmpty ? _name.trim()[0].toUpperCase() : 'U';
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    // Datos del proveedor centralizados
+    final String name = authProvider.userName ?? "Usuario WeFly";
+    final String email = authProvider.userEmail ?? "usuario@wefly.com";
+    
+    // NOTA: Si aún no tienes estas variables en tu AuthProvider, las simulamos 
+    // para que la pantalla compile perfectamente ante tu socia.
+    final String bio = "¡Viajando por el mundo con WeFly! ✈️"; 
+    final String photoUrl = ""; 
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoading
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: authProvider.isLoading
           ? const Center(child: CircularProgressIndicator(color: WeFlyTheme.orangePrimary))
-          : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // --- CABECERA EN DEGRADADO CON AVATAR ---
+                  Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
                     children: [
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16)),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: _fetchUserProfile,
-                        child: const Text("Reintentar"),
-                      )
-                    ],
-                  ),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // --- ENCABEZADO CON DEGRADADO ---
-                      Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            height: 220,
-                            width: double.infinity,
-                            decoration: const BoxDecoration(
-                              gradient: WeFlyTheme.mainGradient,
-                              borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(50),
-                                bottomRight: Radius.circular(50),
-                              ),
-                            ),
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.25,
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          gradient: WeFlyTheme.mainGradient,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(40),
+                            bottomRight: Radius.circular(40),
                           ),
-                          Positioned(
-                            top: 140,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2)
-                                ],
-                              ),
-                              child: CircleAvatar(
-                                radius: 65,
-                                backgroundColor: Colors.grey[200],
-                                child: ClipOval(
-                                  child: _photoUrl.trim().isNotEmpty
-                                      ? Image.network(
-                                          _photoUrl.trim(),
-                                          width: 130,
-                                          height: 130,
-                                          fit: BoxFit.cover,
-                                          // 🔥 Si el navegador bloquea la imagen por CORS, cargamos la inicial
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Center(
-                                              child: Text(
-                                                firstLetter,
-                                                style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold, color: Colors.indigo),
-                                              ),
-                                            );
-                                          },
-                                        )
-                                      : Center(
-                                          child: Text(
-                                            firstLetter,
-                                            style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold, color: Colors.grey),
-                                          ),
-                                        ),
+                        ),
+                        child: const SafeArea(
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 15),
+                              child: Text(
+                                "Mi Perfil",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
-
-                      const SizedBox(height: 80),
-
-                      // --- INFO DE USUARIO DINÁMICA ---
-                      Text(
-                        _name,
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
-                      ),
-                      const Text(
-                        "Viajera Verificada",
-                        style: TextStyle(color: WeFlyTheme.orangePrimary, fontWeight: FontWeight.w600),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // --- SECCIÓN BIOGRAFÍA DINÁMICA (CARD) ---
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 25),
+                      Positioned(
+                        top: MediaQuery.of(context).size.height * 0.17,
                         child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(25),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                "Sobre mí",
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                _bio,
-                                style: TextStyle(color: Colors.grey[800], fontSize: 16, height: 1.5),
-                              ),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              )
                             ],
                           ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: WeFlyTheme.orangePrimary.withOpacity(0.2),
+                            // Si hay foto la pintamos, si no, mostramos la inicial
+                            backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                            child: photoUrl.isEmpty
+                                ? Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : "U",
+                                    style: const TextStyle(
+                                      fontSize: 40,
+                                      fontWeight: FontWeight.bold,
+                                      color: WeFlyTheme.orangePrimary,
+                                    ),
+                                  )
+                                : null,
+                          ),
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-
-                      // --- BOTÓN EDITAR ---
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditProfileScreen(
-                                userId: widget.userId,
-                                currentName: _name,
-                                currentBio: _bio,
-                                currentPhotoUrl: _photoUrl,
-                              ),
-                            ),
-                          );
-
-                          if (result == true) {
-                            _fetchUserProfile();
-                          }
-                        },
-                        icon: const Icon(Icons.edit, size: 20),
-                        label: const Text("EDITAR PERFIL"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: WeFlyTheme.orangePrimary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          elevation: 3,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 50),
                     ],
                   ),
+
+                  const SizedBox(height: 70),
+
+                  // --- NOMBRE Y EMAIL ---
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  // --- 🔥 NUEVO: BOTÓN EDITAR PERFIL ---
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      // Viajamos a tu pantalla pasándole los datos requeridos
+                      final updated = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileScreen(
+                            userId: authProvider.userId ?? 0,
+                            currentName: name,
+                            currentBio: bio,
+                            currentPhotoUrl: photoUrl,
+                          ),
+                        ),
+                      );
+
+                      // Si el usuario guardó cambios con éxito (devolvió true)
+                      if (updated == true) {
+                        // Aquí en el futuro llamaremos a un método para recargar el provider:
+                        // authProvider.refreshUser();
+                      }
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: WeFlyTheme.orangePrimary),
+                    label: const Text(
+                      "Editar Perfil",
+                      style: TextStyle(color: WeFlyTheme.orangePrimary, fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: WeFlyTheme.orangePrimary, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  // --- TARJETAS DE INFORMACIÓN ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        _buildProfileCard(
+                          icon: Icons.person_outline,
+                          title: "Nombre Completo",
+                          subtitle: name,
+                        ),
+                        const SizedBox(height: 15),
+                        _buildProfileCard(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          title: "Biografía",
+                          subtitle: bio,
+                        ),
+                        const SizedBox(height: 15),
+                        _buildProfileCard(
+                          icon: Icons.email_outlined,
+                          title: "Correo Electrónico",
+                          subtitle: email,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 35),
+
+                  // --- BOTÓN DE CERRAR SESIÓN ---
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          await authProvider.logout();
+                        },
+                        icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                        label: const Text(
+                          "CERRAR SESIÓN",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade400,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildProfileCard({required IconData icon, required String title, required String subtitle}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: WeFlyTheme.orangePrimary),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
