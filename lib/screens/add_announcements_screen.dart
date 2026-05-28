@@ -18,7 +18,6 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
   // Controladores para capturar el texto
   final _origenController = TextEditingController();
   final _destinoController = TextEditingController();
-  final _precioController = TextEditingController();
   final _plazasController = TextEditingController();
   String _tipoSeleccionado = 'Vuelo Directo';
 
@@ -28,7 +27,6 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
   void dispose() {
     _origenController.dispose();
     _destinoController.dispose();
-    _precioController.dispose();
     _plazasController.dispose();
     super.dispose();
   }
@@ -44,7 +42,6 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
         final Map<String, dynamic> data = {
           'origin': _origenController.text.trim(),
           'destination': _destinoController.text.trim(),
-          'price': double.tryParse(_precioController.text) ?? 0.0,
           'availableSeats': int.tryParse(_plazasController.text) ?? 1,
           'type': _tipoSeleccionado,
           'createdAt': DateTime.now().toIso8601String(),
@@ -111,16 +108,6 @@ class _AddAnnouncementScreenState extends State<AddAnnouncementScreen> {
 
                   Row(
                     children: [
-                      // PRECIO
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _precioController,
-                          label: 'Precio (€)',
-                          icon: Icons.euro_rounded,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 15),
                       // PLAZAS
                       Expanded(
                         child: _buildTextField(

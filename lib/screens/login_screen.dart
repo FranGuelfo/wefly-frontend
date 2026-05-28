@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wefly_app/screens/main_navigation_screen.dart';
 import '../theme/wefly_theme.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
@@ -24,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // 1. Para el botón de entrar normal con Email
   void _submitLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -38,6 +40,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!success) {
           _showErrorSnackBar('Credenciales incorrectas o error de servidor');
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          );
         }
       } catch (e) {
         if (!mounted) return;
@@ -46,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // 2. Para el botón de continuar con Google
   void _submitGoogleLogin() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
@@ -56,6 +64,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!success) {
         _showErrorSnackBar('Acceso con Google cancelado o fallido');
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -98,9 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         bottomRight: Radius.circular(60),
                       ),
                     ),
-                    child: Column(
+                    child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.flight_takeoff,
                           size: 70,
@@ -205,7 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: Colors.grey,
                                 ),
                                 onPressed: () => setState(
-                                  () => _isPasswordVisible = !_isPasswordVisible,
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
                                 ),
                               ),
                               border: OutlineInputBorder(
@@ -263,8 +277,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 25),
 
                           // --- DIVISOR "O" ---
-                          Row(
-                            children: const [
+                          const Row(
+                            children: [
                               Expanded(
                                 child: Divider(
                                   color: Colors.grey,
@@ -309,17 +323,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 backgroundColor: Colors.grey.shade50,
                               ),
-                              child: Row(
+                              child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.g_mobiledata,
                                     color: Colors.blue,
                                     size: 30,
                                   ),
-                                  const SizedBox(width: 12),
-                                  const Text(
+                                  SizedBox(width: 12),
+                                  Text(
                                     "Continuar con Google",
                                     style: TextStyle(
                                       color: Colors.black87,
@@ -347,7 +361,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const RegisterScreen(),
+                                      builder: (context) =>
+                                          const RegisterScreen(),
                                     ),
                                   );
                                 },

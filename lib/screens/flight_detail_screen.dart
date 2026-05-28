@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart'
+    as html; // 🔥 Para abrir WhatsApp en Flutter Web sin fallos
 import '../theme/wefly_theme.dart';
 
 class FlightDetailScreen extends StatelessWidget {
@@ -6,16 +8,32 @@ class FlightDetailScreen extends StatelessWidget {
 
   const FlightDetailScreen({super.key, required this.viajeData});
 
+  // 🔥 Función mágica para abrir WhatsApp con un mensaje automático personalizado
+  void _abrirWhatsApp(String telefono, String origen, String destino) {
+    final String mensaje = Uri.encodeComponent(
+      "¡Hola! Te he visto en WeFly para compartir el transporte desde el aeropuerto en el vuelo de $origen a $destino. ¡Me interesa unirme al plan! ✈️",
+    );
+    final String url = "https://wa.me/$telefono?text=$mensaje";
+
+    // Abre la URL de forma segura tanto en Web como en móvil
+    html.window.open(url, '_blank');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool ultimaPlaza = viajeData["plazas"] == "Última plaza";
+    // Simulamos datos premium del creador del anuncio basándonos en tu idea de reseñas
+    const String creadorNombre = "Alejandro Ruiz";
+    const double creadorEstrellas = 4.9;
+    const String creadorRango = "Piloto Experto";
+    const String telefonoContacto =
+        "+34600000000"; // Aquí iría el teléfono del backend
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text(
-          'Detalles del Vuelo',
-          style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
+        title: const Text(
+          'Detalles del Grupo',
+          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -26,34 +44,111 @@ class FlightDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- TARJETA PRINCIPAL DE RUTA ---
+            // --- BLOQUE 1: PERFIL DEL ANFITRIÓN (TU IDEA DE RESEÑAS) ---
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 32,
+                    backgroundColor: WeFlyTheme.orangePrimary,
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: 35,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          creadorNombre,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: WeFlyTheme.orangePrimary.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                creadorRango,
+                                style: TextStyle(
+                                  color: WeFlyTheme.orangePrimary,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              '$creadorEstrellas',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 25),
+
+            // --- BLOQUE 2: TARJETA DE RUTA ---
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: WeFlyTheme.mainGradient,
                 borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: WeFlyTheme.orangePrimary.withOpacity(0.2),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  )
-                ],
               ),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        viajeData["tipo"]!.toUpperCase(),
-                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      viajeData["tipo"]!.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
                       ),
-                      Text(
-                        viajeData["precio"]!,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 28),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -62,18 +157,50 @@ class FlightDetailScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("ORIGEN", style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+                          const Text(
+                            "ORIGEN",
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(viajeData["origen"]!, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text(
+                            viajeData["origen"]!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
-                      const Icon(Icons.flight_takeoff_rounded, color: Colors.white, size: 30),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text("DESTINO", style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+                          const Text(
+                            "DESTINO DE LLEGADA",
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(viajeData["destino"]!, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                          Text(
+                            viajeData["destino"]!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -81,62 +208,101 @@ class FlightDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
-            // --- CARACTERÍSTICAS DEL VUELO ---
+            // --- BLOQUE 3: DETALLES DEL TRANSPORTE ---
             const Text(
-              "Características del viaje",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              "Información del trayecto",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
 
             _buildDetailTile(
-              icon: Icons.calendar_today_rounded,
-              title: "Fecha de salida",
-              value: viajeData["fecha"]!,
+              icon: Icons.directions_car_rounded,
+              title: "Medio de transporte elegido",
+              value:
+                  viajeData["tipo"]!, // Mostrará si es Taxi, Uber/Cabify, etc.
             ),
             _buildDetailTile(
               icon: Icons.event_seat_rounded,
-              title: "Disponibilidad",
+              title: "Plazas disponibles actualmente",
               value: viajeData["plazas"]!,
-              valueColor: ultimaPlaza ? Colors.red.shade600 : Colors.green.shade600,
+              valueColor: viajeData["plazas"] == "Última plaza"
+                  ? Colors.red.shade600
+                  : Colors.green.shade600,
             ),
             _buildDetailTile(
-              icon: Icons.luggage_rounded,
-              title: "Equipaje permitido",
-              value: "Maleta de mano incluida (Máx. 10kg)",
+              icon: Icons.schedule_rounded,
+              title: "Fecha estimada de llegada",
+              value: viajeData["fecha"]!,
             ),
             _buildDetailTile(
-              icon: Icons.verified_user_rounded,
-              title: "Seguridad WeFly",
-              value: "Comunidad de viajeros verificados",
+              icon: Icons.near_me_rounded,
+              title: "Zona de destino final en la ciudad",
+              value: "Centro urbano / Zona de hoteles",
             ),
 
             const SizedBox(height: 40),
 
-            // --- BOTÓN DE ACCIÓN PRINCIPAL ---
+            // --- BOTÓN DE ACCIÓN 1: SOLICITAR UNIRSE (BLABLACAR STYLE) ---
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 onPressed: () {
-                  // Aquí se ejecutará en el futuro tu método apiService.joinFlight(...)
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('¡Te has unido con éxito al vuelo ${viajeData["origen"]}! 🎉'),
-                      backgroundColor: Colors.green,
+                    const SnackBar(
+                      content: Text(
+                        '¡Solicitud enviada al creador! Esperando aprobación... ⏳',
+                      ),
+                      backgroundColor: WeFlyTheme.orangePrimary,
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: WeFlyTheme.orangePrimary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 2,
                 ),
                 child: const Text(
-                  "SOLICITAR UNIRSE AL VUELO",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  "SOLICITAR UNIRSE AL PLAN",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // --- BOTÓN DE ACCIÓN 2: CONTACTAR POR WHATSAPP (FLEXIBLE Y RÁPIDO) ---
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: OutlinedButton.icon(
+                onPressed: () => _abrirWhatsApp(
+                  telefonoContacto,
+                  viajeData["origen"]!,
+                  viajeData["destino"]!,
+                ),
+                icon: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: Colors.green,
+                  size: 22,
+                ),
+                label: const Text(
+                  "HABLAR POR WHATSAPP",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.green, width: 2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
               ),
             ),
@@ -159,7 +325,11 @@ class FlightDetailScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.01),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -169,9 +339,19 @@ class FlightDetailScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                title,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
               const SizedBox(height: 2),
-              Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: valueColor ?? Colors.black87)),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: valueColor ?? Colors.black87,
+                ),
+              ),
             ],
           ),
         ],

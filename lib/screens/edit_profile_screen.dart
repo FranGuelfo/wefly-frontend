@@ -1,271 +1,201 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../theme/wefly_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final int userId;
-  final String currentName;
-  final String currentBio;
-  final String currentPhotoUrl;
-
-  const EditProfileScreen({
-    super.key,
-    required this.userId,
-    required this.currentName,
-    required this.currentBio,
-    required this.currentPhotoUrl,
-  });
+  const EditProfileScreen({super.key});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:8081/api/v1'));
+  final _formKey = GlobalKey<FormState>();
   
-  late TextEditingController _nameController;
-  late TextEditingController _bioController;
-  late TextEditingController _photoController; 
+  // Controladores con los datos actuales del usuario para editarlos
+  final _nombreController = TextEditingController(text: "Carlos Mendoza");
+  final _telefonoController = TextEditingController(text: "+34 600 00 00 00");
+  final _emailController = TextEditingController(text: "carlos.mendoza@email.com");
+
   bool _isSaving = false;
 
   @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.currentName);
-    _bioController = TextEditingController(text: widget.currentBio);
-    _photoController = TextEditingController(text: widget.currentPhotoUrl);
-
-    // Escuchamos los cambios en el input de la foto para refrescar la vista previa
-    _photoController.addListener(() {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
   void dispose() {
-    _nameController.dispose();
-    _bioController.dispose();
-    _photoController.dispose();
+    _nombreController.dispose();
+    _telefonoController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _saveChanges() async {
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El nombre no puede estar vacío'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
-    setState(() => _isSaving = true);
-    try {
-      // 🔥 Ahora el PATCH viaja al puerto correcto y añade también el 'profilePictureUrl'
-      final response = await _dio.patch(
-        '/users/${widget.userId}',
-        data: {
-          'name': _nameController.text.trim(),
-          'bio': _bioController.text.trim(),
-          'profilePictureUrl': _photoController.text.trim(), // Ajusta esta clave al nombre exacto de tu DTO en Java
-        },
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Perfil actualizado con éxito!'),
-              backgroundColor: Colors.green,
+  // 🔥 NUEVA FUNCIÓN: Despliega el selector inferior para cambiar la foto
+  void _cambiarFotoPerfil() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 35,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-          );
-          Navigator.pop(context, true); // Volvemos al perfil avisando que hay cambios
-        }
-      }
-    } catch (e) {
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: WeFlyTheme.orangePrimary),
+              title: const Text("Elegir de la Galería", style: TextStyle(fontFamily: 'Poppins')),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Acceso a la galería simulado con éxito 📸")),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: WeFlyTheme.orangePrimary),
+              title: const Text("Hacer Foto con la Cámara", style: TextStyle(fontFamily: 'Poppins')),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Acceso a la cámara simulado con éxito 📸")),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _guardarPerfil() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isSaving = true);
+
+      // Simulamos la petición al ApiService.updateUserProfile
+      await Future.delayed(const Duration(seconds: 1)); 
+
       if (mounted) {
+        setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al guardar los cambios: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('¡Perfil actualizado correctamente! ✨'), backgroundColor: Colors.green),
         );
+        Navigator.pop(context); // Volvemos al perfil
       }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final String firstLetter = _nameController.text.isNotEmpty ? _nameController.text[0].toUpperCase() : 'U';
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Editar Perfil',
-          style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Editar Perfil', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Colors.black87,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(25.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- AVATAR CON VISTA PREVIA EN TIEMPO REAL Y CONTROL DE ERRORES (CORS/URL ROTA) ---
-            Center(
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade300, width: 3),
-                    ),
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.grey[200],
-                      child: ClipOval(
-                        child: _photoController.text.isNotEmpty
-                            ? Image.network(
-                                _photoController.text.trim(),
-                                width: 120,
-                                height: 120,
-                                fit: BoxFit.cover,
-                                // 🔥 Si da error de CORS o la URL es mala, muestra la inicial del usuario
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Text(
-                                      firstLetter,
-                                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.indigo),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Center(
-                                child: Text(
-                                  firstLetter,
-                                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.grey),
-                                ),
-                              ),
+      body: _isSaving
+          ? const Center(child: CircularProgressIndicator(color: WeFlyTheme.orangePrimary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(25.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // 🔥 CONECTADO: Ahora al pulsar el avatar se abre el selector de fotos
+                    GestureDetector(
+                      onTap: _cambiarFotoPerfil,
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          const CircleAvatar(
+                            radius: 50,
+                            backgroundColor: WeFlyTheme.orangePrimary,
+                            child: Icon(Icons.person_rounded, size: 55, color: Colors.white),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(color: WeFlyTheme.orangePrimary, shape: BoxShape.circle),
+                            child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        color: WeFlyTheme.orangePrimary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.link,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                    const SizedBox(height: 35),
+
+                    // CAMPO NOMBRE
+                    _buildEditField(
+                      controller: _nombreController,
+                      label: "Nombre completo",
+                      icon: Icons.person_outline_rounded,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 40),
+                    const SizedBox(height: 15),
 
-            // --- INPUT NOMBRE (EDITABLE) ---
-            const Text(
-              'Nombre de usuario',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                hintText: "Tu nombre",
-              ),
-            ),
-            const SizedBox(height: 25),
+                    // CAMPO TELÉFONO
+                    _buildEditField(
+                      controller: _telefonoController,
+                      label: "Número de teléfono (Para WhatsApp)",
+                      icon: Icons.phone_android_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 15),
 
-            // --- INPUT URL DE FOTO (EDITABLE CON VISTA PREVIA) ---
-            const Text(
-              'Enlace de la Foto de Perfil',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _photoController,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                prefixIcon: const Icon(
-                  Icons.image_outlined,
-                  color: Colors.grey,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                hintText: "http://ejemplo.com/foto.jpg",
-              ),
-            ),
-            const SizedBox(height: 25),
+                    // CAMPO EMAIL
+                    _buildEditField(
+                      controller: _emailController,
+                      label: "Correo electrónico",
+                      icon: Icons.mail_outline_rounded,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 40),
 
-            // --- INPUT BIOGRAFÍA (EDITABLE) ---
-            const Text(
-              'Biografía',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _bioController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                hintText: "Cuéntanos sobre ti...",
-              ),
-            ),
-            const SizedBox(height: 40),
-
-            // --- BOTÓN GUARDAR ---
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: WeFlyTheme.orangePrimary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isSaving
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'GUARDAR CAMBIOS',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                    // BOTÓN GUARDAR
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: _guardarPerfil,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: WeFlyTheme.orangePrimary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
+                        child: const Text("GUARDAR CAMBIOS", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+    );
+  }
+
+  Widget _buildEditField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.grey),
+        filled: true,
+        fillColor: const Color(0xFFF8F9FA),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+        floatingLabelStyle: const TextStyle(color: WeFlyTheme.orangePrimary),
       ),
+      validator: (value) => (value == null || value.isEmpty) ? 'Este campo no puede quedar vacío' : null,
     );
   }
 }
