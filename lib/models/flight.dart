@@ -3,7 +3,8 @@ class Flight {
   final String flightNumber;
   final String origin;
   final String destination;
-  final String? arrivalTime; // Nullable por si viene vacío al crearse dinámicamente
+  final String? arrivalTime;
+  final int plazas;
 
   Flight({
     required this.id,
@@ -11,6 +12,7 @@ class Flight {
     required this.origin,
     required this.destination,
     this.arrivalTime,
+    this.plazas = 0,
   });
 
   factory Flight.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class Flight {
       origin: json['origin'] ?? 'Por definir',
       destination: json['destination'] ?? 'Por definir',
       arrivalTime: json['arrivalTime'],
+      plazas: json['plazas'] ?? 0,
     );
   }
 }

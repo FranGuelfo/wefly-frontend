@@ -1,9 +1,9 @@
 import 'dart:developer';
-import 'package:universal_html/html.dart' as html; // Web seguro y multi-plataforma
+import 'package:universal_html/html.dart' as html;
 import 'package:dio/dio.dart';
-import '../models/announcement.dart';
 import '../models/user_model.dart';
 import '../models/flight.dart';
+import '../models/announcement.dart';
 
 class ApiService {
   final Dio _dio = Dio(
@@ -23,7 +23,9 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
 
-          return handler.next(options); // Convertido en return para evitar bloqueos
+          return handler.next(
+            options,
+          ); // Convertido en return para evitar bloqueos
         },
         onError: (DioException e, handler) {
           if (e.response?.statusCode == 401) {
@@ -44,23 +46,24 @@ class ApiService {
     }
   }
 
-  Future<List<Announcement>> getAnnouncements(String flight, int userId) async {
-    try {
-      final response = await _dio.get(
-        '/announcements/flight/$flight',
-        queryParameters: {'userId': userId},
-      );
-      return (response.data as List)
-          .map((e) => Announcement.fromJson(e))
-          .toList();
-    } on DioException catch (e) {
-      throw e.response?.data['message'] ?? "Error de conexión";
-    }
-  }
+  // Añade esta URL arriba junto a las demás
+  final String _usersUrl = "/users";
 
-  Future<UserProfile> getUserProfile(int userId) async {
-    final response = await _dio.get('/users/$userId');
-    return UserProfile.fromJson(response.data);
+  // Método para obtener los datos del creador del anuncio
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final response = await _dio.get("$_usersUrl/$userId");
+
+      if (response.statusCode == 200) {
+        return response.data as Map<String, dynamic>;
+      } else {
+        throw Exception(
+          "Error al obtener perfil del usuario: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Error de red al obtener perfil: $e");
+    }
   }
 
   Future<UserProfile> updateUserProfile(
@@ -75,19 +78,11 @@ class ApiService {
     }
   }
 
-  Future<void> createAnnouncement(int userId, Map<String, dynamic> data) async {
-    try {
-      await _dio.post(
-        '/announcements',
-        queryParameters: {'userId': userId},
-        data: data,
-      );
-    } catch (e) {
-      throw Exception("Error al crear anuncio");
-    }
-  }
-
-  Future<void> updateAnnouncement(int announcementId, int userId, Map<String, dynamic> data) async {
+  Future<void> updateAnnouncement(
+    int announcementId,
+    int userId,
+    Map<String, dynamic> data,
+  ) async {
     try {
       await _dio.patch(
         '/announcements/$announcementId',
@@ -141,4 +136,59 @@ class ApiService {
       throw Exception("Error al cargar usuarios del vuelo");
     }
   }
-} // <- Solo una llave final cerrando la clase ApiService
+
+  // Base path para anuncios (usa el mismo baseUrl de Dio)
+  final String _announcementsPath = "/announcements";
+
+  // 1. Guardar anuncio en la BBDD de Spring Boot usando Dio
+  Future<bool> createAnnouncement({
+    required String origin,
+    required String destination,
+    required String dateStr,
+    required String plazas,
+    required String tipo,
+    required String flightNumber,
+    required int userId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '$_announcementsPath/create',
+        data: {
+          'origin': origin,
+          'destination': destination,
+          'dateStr': dateStr,
+          'plazas': plazas,
+          'tipo': tipo,
+          'flightNumber': flightNumber,
+          'userId': userId,
+        },
+      );
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // 2. Recuperar la lista de anuncios reales de un vuelo usando Dio
+  Future<List<Announcement>> getAnnouncements(
+    String flightNumber,
+    int userId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '$_announcementsPath/flight/$flightNumber',
+        queryParameters: {'userId': userId},
+      );
+
+      if (response.statusCode == 200) {
+        // Convertimos el JSON directamente a una lista de objetos Announcement
+        final List<dynamic> data = response.data;
+        return data.map((json) => Announcement.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception("Error: $e");
+    }
+  }
+}
