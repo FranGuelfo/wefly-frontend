@@ -62,18 +62,23 @@ class FlightProvider with ChangeNotifier {
     return false;
   }
 
-  Future<bool> joinFlight(int flightId, int userId, String reservationCode, String authToken) async {
+  Future<bool> joinFlight(
+    int flightId,
+    int userId,
+    String reservationCode,
+    String authToken,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final body = json.encode({
-      "flightId": flightId, 
+      "flightId": flightId,
       "userId": userId,
-      "reservationCode": reservationCode
+      "reservationCode": reservationCode,
     });
-    
-    print("ENVIANDO A API: $body"); 
+
+    print("ENVIANDO A API: $body");
 
     try {
       final response = await http.post(
@@ -86,7 +91,9 @@ class FlightProvider with ChangeNotifier {
       );
 
       // ¡AÑADE ESTO!
-      print("RESPUESTA DEL SERVIDOR: ${response.statusCode} - ${response.body}");
+      print(
+        "RESPUESTA DEL SERVIDOR: ${response.statusCode} - ${response.body}",
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _isLoading = false;
@@ -109,14 +116,15 @@ class FlightProvider with ChangeNotifier {
   }
 
   // 1. Obtener la lista de solicitudes pendientes para el dueño del anuncio
-  Future<List<dynamic>> getPendingBookings(int flightId, String authToken) async {
+  Future<List<dynamic>> getPendingBookings(
+    int flightId,
+    String authToken,
+  ) async {
     try {
       // Ajusta la URL según la ruta que definimos en el Controller: /api/bookings/pending/{flightId}
       final response = await http.get(
         Uri.parse('http://localhost:8081/api/v1/bookings/pending/$flightId'),
-        headers: {
-          'Authorization': 'Bearer $authToken',
-        },
+        headers: {'Authorization': 'Bearer $authToken'},
       );
 
       if (response.statusCode == 200) {
@@ -163,6 +171,24 @@ class FlightProvider with ChangeNotifier {
     } catch (e) {
       print("Error al rechazar: $e");
       return false;
+    }
+  }
+
+  Future<List<dynamic>> getConfirmedBookings(
+    int flightId,
+    String authToken,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:8081/api/v1/bookings/confirmed/$flightId',
+        ), // <- Ruta correcta
+        headers: {'Authorization': 'Bearer $authToken'},
+      );
+      if (response.statusCode == 200) return json.decode(response.body);
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

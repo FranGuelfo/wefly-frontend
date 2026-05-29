@@ -101,16 +101,17 @@ class ApiService {
   }) async {
     try {
       final response = await _dio.post(
-        'http://localhost:8081/api/v1/flights/join',
-        queryParameters: {
-          'userId': userId,
-          'flightNumber': flightNumber,
-          'reservationCode': reservationCode,
+        '/flights/join',
+        data: {
+          "userId": userId,
+          "flightNumber": flightNumber,
+          "reservationCode": reservationCode,
         },
       );
-      return response.statusCode == 200;
+
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e, st) {
-      log("Error al unirse al vuelo", error: e, stackTrace: st);
+      log("Error al unirse al vuelo con Dio", error: e, stackTrace: st);
       return false;
     }
   }
@@ -189,6 +190,18 @@ class ApiService {
       return [];
     } catch (e) {
       throw Exception("Error: $e");
+    }
+  }
+
+  Future<bool> rejectBooking(int bookingId) async {
+    try {
+      // Apunta a /bookings/reject/{id} usando DELETE
+      final response = await _dio.delete('/bookings/reject/$bookingId');
+      
+      return response.statusCode == 200;
+    } catch (e, st) {
+      log("Error al rechazar la reserva con Dio", error: e, stackTrace: st);
+      return false;
     }
   }
 }
