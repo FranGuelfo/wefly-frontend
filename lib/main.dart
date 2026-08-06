@@ -7,6 +7,7 @@ import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'providers/user_provider.dart';
 import 'providers/flight_provider.dart';
+import 'providers/chat_provider.dart';
 
 void main() {
   // Inicialización limpia estándar de Flutter
@@ -19,6 +20,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AnnouncementProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => FlightProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MyApp(),
     ),

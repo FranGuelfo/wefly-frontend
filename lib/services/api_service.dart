@@ -96,7 +96,7 @@ class ApiService {
 
   Future<bool> joinFlight({
     required int userId,
-    required String flightNumber,
+    required String flightId,
     required String reservationCode,
   }) async {
     try {
@@ -104,7 +104,7 @@ class ApiService {
         '/flights/join',
         data: {
           "userId": userId,
-          "flightNumber": flightNumber,
+          "flightId": flightId,
           "reservationCode": reservationCode,
         },
       );
@@ -202,6 +202,42 @@ class ApiService {
     } catch (e, st) {
       log("Error al rechazar la reserva con Dio", error: e, stackTrace: st);
       return false;
+    }
+  }
+
+  Future<List<dynamic>> getChatHistory(int announcementId) async {
+    try {
+      final response = await _dio.get('/chat/history/$announcementId');
+      if (response.statusCode == 200) {
+        return response.data as List<dynamic>;
+      }
+      return [];
+    } catch (e, st) {
+      log("Error al cargar el historial del chat", error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  /// Registra en el servidor que el usuario está viendo el chat ahora mismo
+  Future<void> markChatAsRead(int announcementId, int userId) async {
+    try {
+      await _dio.post('/chat/read/$announcementId', queryParameters: {'userId': userId});
+    } catch (e) {
+      log("Error al marcar chat como leído", error: e);
+    }
+  }
+
+  /// Obtiene el número de mensajes sin leer de un chat específico
+  Future<int> getUnreadCount(int announcementId, int userId) async {
+    try {
+      final response = await _dio.get('/chat/unread', queryParameters: {
+        'announcementId': announcementId,
+        'userId': userId
+      });
+      return response.data['unreadCount'] ?? 0;
+    } catch (e) {
+      log("Error al obtener mensajes no leídos", error: e);
+      return 0;
     }
   }
 }

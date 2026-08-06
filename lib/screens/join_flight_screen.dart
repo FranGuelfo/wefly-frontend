@@ -35,7 +35,7 @@ class _JoinFlightScreenState extends State<JoinFlightScreen> {
     // Simulamos que somos Mila (ID 2) solicitando entrar al vuelo
     final success = await _apiService.joinFlight(
       userId: 2, 
-      flightNumber: _flightController.text.trim().toUpperCase(),
+      flightId: _flightController.text.trim().toUpperCase(),
       reservationCode: _codeController.text.trim().toUpperCase(),
     );
 

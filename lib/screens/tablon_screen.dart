@@ -45,7 +45,7 @@ class _TablonScreenState extends State<TablonScreen> {
 
       final exito = await _apiService.joinFlight(
         userId: uId,
-        flightNumber: vNum,
+        flightId: vNum,
         reservationCode: resCode,
       );
 
